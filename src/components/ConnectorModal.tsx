@@ -70,14 +70,6 @@ export default function ConnectorModal({
                   }}
                 />
 
-                <ConnectButton
-                  label="WalletConnect"
-                  image="/connectors/walletconnect.svg"
-                  onClick={async () => {
-                    await walletConnect.activate(desiredChain)
-                    onClose()
-                  }}
-                />
               </div>
 
               <button
