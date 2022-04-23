@@ -1,48 +1,64 @@
 /* This example requires Tailwind CSS v2.0+ */
 import React, { Fragment, useState } from "react";
-
-import ConnectorModal from "@components/ConnectorModal";
 import { useWeb3React } from "@web3-react/core";
 import { Header } from "@components/Header";
-import Link from "next/link";
 import { Dialog, Transition } from "@headlessui/react";
-import { metaMask } from "@connectors/metaMask";
-import { getAddChainParameters } from "@chains";
-import { walletConnect } from "@connectors/walletConnect";
 import { useRouter } from "next/router";
+import { ethers } from "ethers";
+import Allowlister from "@abi/Allowlister.json";
+import { useSignerOrProvider } from "@hooks/useWeb3React";
+import LensHub from "@abi/LensHub.json";
 
 
 export default function Example() {
   const { isActive, account } = useWeb3React()
   const router = useRouter();
-  const { rafflename } = router.query
+  const { raffleAddress } = router.query
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
+  const signerOrProvider = useSignerOrProvider();
+  const [raffleName, setRaffleName] = useState("Loading...");
+  const [winnersToDraw, setWinnersToDraw] = useState(0);
+  const image = 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80';
+  const [registeredUsers, setRegisteredUsers] = useState([
+    {
+      handle: '@alice',
+      address: '0x7f268357a8c2552623316e2562d90e642bb538e5',
+      image: image,
+    },
+    {
+      handle: '@alice',
+      address: '0x7f268357a8c2552623316e2562d90e642bb538e5',
+      image: image,
+    },
+  ]);
 
+  const lensHub = new ethers.Contract(	"0x4BF0c7AD32Fd2d32089790a54485e23f5C7736C0", LensHub.abi, signerOrProvider);
   const onClose = () => setIsOpen(false);
 
-  const people = [
-    {
-      handle: '@alice',
-      address: '0x7f268357a8c2552623316e2562d90e642bb538e5',
-      image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    {
-      handle: '@alice',
-      address: '0x7f268357a8c2552623316e2562d90e642bb538e5',
-      image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-  ]
+  try {
+    const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
+    console.log(contract);
+    setRaffleName(contract.displayName());
+    setWinnersToDraw(contract.winnersToDraw());
+    const ids = contract.s_registeredIds();
+    ids.map((x) => lensHub.getHandle(x)).then((handles: string[]) => {
+      const users = handles.map((handle, ix) => {
+        return {handle, address: ids[ix], image: image}
+      });
+      setRegisteredUsers(users);
+    });
+  } catch (e) {
+    console.log(e);
+  }
 
   const handleSubmit = async (event) => {
     console.log(`Handling!`);
     event.preventDefault();
     setCreating(true);
-
     try {
-      console.log(`Waiting...`);
-      await new Promise((r, j) => setTimeout(r, 5000));
-      console.log(`Done!`);
+      const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
+      await contract.raffle();
       setIsOpen(true);
     } catch (e) {
       console.log(e);
@@ -58,7 +74,7 @@ export default function Example() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Raffle: {rafflename}
+              Raffle: {raffleName}
             </p>
           </div>
 
@@ -79,7 +95,7 @@ export default function Example() {
                               <input
                                 type="text"
                                 disabled
-                                value={"Moonbirds"}
+                                value={raffleName}
                                 name="raffle_name"
                                 id="raffle_name"
                                 autoComplete="given-name"
@@ -95,7 +111,7 @@ export default function Example() {
                                 type="number"
                                 name="number_of_spots"
                                 disabled
-                                value={1000}
+                                value={winnersToDraw}
                                 id="number_of_spots"
                                 autoComplete="email"
                                 className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
@@ -175,7 +191,7 @@ export default function Example() {
                                   </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-200 bg-white">
-                                  {people.map((person) => (
+                                  {registeredUsers.map((person) => (
                                     <tr key={person.address}>
                                       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                         <div className="flex items-center">

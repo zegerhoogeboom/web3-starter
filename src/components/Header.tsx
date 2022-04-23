@@ -2,13 +2,16 @@ import { useWeb3React } from "@web3-react/core";
 import React, { useState } from "react";
 import { Popover } from "@headlessui/react";
 import { MenuIcon } from "@heroicons/react/outline";
-import ConnectorModal from "@components/ConnectorModal";
 import { metaMask } from "@connectors/metaMask";
 import { getAddChainParameters } from "@chains";
+import { getHandle } from "@utils/Utils";
 
 export function Header() {
   const { isActive, account } = useWeb3React()
   const [isOpen, setIsOpen] = useState(false)
+  const [handle, setHandle] = useState("")
+
+  getHandle().then((h) => setHandle(h));
 
   return (
     <div>
@@ -27,14 +30,6 @@ export function Header() {
                 <MenuIcon className="h-6 w-6" aria-hidden="true" />
               </Popover.Button>
             </div>
-            <Popover.Group as="nav" className="hidden md:flex space-x-10">
-              <a href="#" className="text-base font-medium text-gray-500 hover:text-gray-900">
-                Pricing
-              </a>
-              <a href="#" className="text-base font-medium text-gray-500 hover:text-gray-900">
-                Docs
-              </a>
-            </Popover.Group>
             <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0">
 
               { !isActive &&
@@ -49,7 +44,7 @@ export function Header() {
 
               { isActive &&
                 <div>
-                  <span>{account}</span>
+                  <span>@{handle}</span>
                   <button
                     type="button"
                     style={{display: "inline"}}

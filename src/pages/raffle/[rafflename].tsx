@@ -2,28 +2,37 @@
 import React, { Fragment, useState } from "react";
 import { useWeb3React } from "@web3-react/core";
 import { Header } from "@components/Header";
-import {useRouter} from "next/router";
+import { useRouter } from "next/router";
 import { Dialog, Transition } from "@headlessui/react";
+import { useSignerOrProvider } from "@hooks/useWeb3React";
+import { ethers } from "ethers";
+import Allowlister from "@abi/Allowlister.json";
 
 
 export default function Example() {
   const { isActive, account } = useWeb3React()
   const router = useRouter();
-  const { rafflename } = router.query
+  const { raffleAddress } = router.query
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
   const [isRegistered, setRegistered] = useState(false);
+  const [raffleName, setRaffleName] = useState("Loading...");
 
+  const signerOrProvider = useSignerOrProvider();
+
+  try {
+    const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
+    console.log(contract);
+    setRaffleName(contract.displayName)
+  } catch (e) {}
   const onClose = () => setIsOpen(false)
 
   const handleSubmit = async (event) => {
-    console.log(`Handling!`);
     event.preventDefault();
     setCreating(true);
     try {
-      console.log(`Waiting...`);
-      await new Promise((r, j) => setTimeout(r, 5000));
-      console.log(`Done!`);
+      const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
+      await contract.register();
       setIsOpen(true);
     } catch (e) {
       console.log(e);
@@ -41,7 +50,7 @@ export default function Example() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Raffle: {rafflename}
+              Raffle: {raffleName}
             </p>
             <p>Number of spots: 1000</p>
           </div>

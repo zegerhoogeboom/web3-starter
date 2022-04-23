@@ -1,39 +1,35 @@
 /* This example requires Tailwind CSS v2.0+ */
 import React, { Fragment, useState } from "react";
-
-import ConnectorModal from "@components/ConnectorModal";
 import { useWeb3React } from "@web3-react/core";
 import { Header } from "@components/Header";
-import Link from "next/link";
 import { Dialog, Transition } from "@headlessui/react";
-import { metaMask } from "@connectors/metaMask";
-import { getAddChainParameters } from "@chains";
-import { walletConnect } from "@connectors/walletConnect";
-
+import { createRaffle } from "@utils/Utils";
 
 export default function Example() {
   const { isActive, account } = useWeb3React()
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
+  const [raffleAddress, setRaffleAddress] = useState(null);
 
-  const onClose = () => setIsOpen(false)
+
+  const onClose = () => setIsOpen(false);
 
   const handleSubmit = async (event) => {
     console.log(`Handling!`);
     event.preventDefault();
     setCreating(true);
 
+
     try {
-      const data = {
+/*      const data = {
         following_since: event.target.following_since.value,
         amount_of_publications: event.target.amount_of_publications.value,
         amount_of_followers: event.target.amount_of_followers.value,
         number_of_spots: event.target.number_of_spots.value,
         raffle_name: event.target.raffle_name.value
-      };
-      console.log(`Waiting...`);
-      await new Promise((r, j) => setTimeout(r, 5000));
-      console.log(`Done!`);
+      };*/
+      const raffle = await createRaffle(event.target.number_of_spots.value, event.target.raffle_name.value);
+      setRaffleAddress(raffle.deployedAddress);
       setIsOpen(true);
     } catch (e) {
       console.log(e);
@@ -152,7 +148,7 @@ export default function Example() {
                           {isCreating &&
 
 
-                          <button type="button" disabled className="bg-indigo-500 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                          <button type="button" disabled className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md bg-lime-400 bg-opacity-20 text-lime-900 hover:bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
 
                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -216,7 +212,7 @@ export default function Example() {
                 </Dialog.Title>
 
                 <div className="mt-8 space-y-2">
-                  Here is your raffle URL: <a href="/raffle">https://</a>
+                  Here is your raffle URL: <a href={"/raffle/" + raffleAddress}>http://localhost:3000/raffle/{raffleAddress}</a>
                 </div>
 
                 <button
