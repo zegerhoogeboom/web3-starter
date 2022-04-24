@@ -7,9 +7,9 @@ import { getAddChainParameters } from "@chains";
 import { getHandle } from "@utils/Utils";
 
 export function Header() {
-  const { isActive, account } = useWeb3React()
-  const [isOpen, setIsOpen] = useState(false)
-  const [handle, setHandle] = useState("")
+  const { isActive, account } = useWeb3React();
+  const [isOpen, setIsOpen] = useState(false);
+  const [handle, setHandle] = useState("");
 
   getHandle().then((h) => setHandle(h));
 

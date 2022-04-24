@@ -1,35 +1,42 @@
 /* This example requires Tailwind CSS v2.0+ */
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useLayoutEffect, useState } from "react";
 import { useWeb3React } from "@web3-react/core";
 import { Header } from "@components/Header";
 import { Dialog, Transition } from "@headlessui/react";
-import { createRaffle } from "@utils/Utils";
+import { createRaffle, getHandle } from "@utils/Utils";
+import { useSignerOrProvider } from "@hooks/useWeb3React";
+import { BigNumber, ethers } from "ethers";
+import AllowlisterFactory from "@abi/AllowlisterFactory.json";
 
 export default function Example() {
   const { isActive, account } = useWeb3React()
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
   const [raffleAddress, setRaffleAddress] = useState(null);
+  const [url, setUrl] = useState("localhost:3000");
 
-
+  useLayoutEffect(() => {
+    setUrl(window.location.protocol + '//' + window.location.host);
+    console.log("URL" + url);
+  });
   const onClose = () => setIsOpen(false);
+  const signerOrProvider = useSignerOrProvider();
+
+  let handle = "";
+  getHandle().then((h) => handle = h);
 
   const handleSubmit = async (event) => {
     console.log(`Handling!`);
     event.preventDefault();
     setCreating(true);
-
-
     try {
-/*      const data = {
-        following_since: event.target.following_since.value,
-        amount_of_publications: event.target.amount_of_publications.value,
-        amount_of_followers: event.target.amount_of_followers.value,
-        number_of_spots: event.target.number_of_spots.value,
-        raffle_name: event.target.raffle_name.value
-      };*/
-      const raffle = await createRaffle(event.target.number_of_spots.value, event.target.raffle_name.value);
-      setRaffleAddress(raffle.deployedAddress);
+      const contract = new ethers.Contract(	"0xbBe9288504CC8c2E8776a01bAfb9dd8813E8f202", AllowlisterFactory.abi, signerOrProvider);
+      const raffleId = BigNumber.from(await contract.s_raffleId());
+      const result = await contract.createRaffle(
+        handle, event.target.raffle_name.value, event.target.number_of_spots.value, ethers.constants.AddressZero, ethers.constants.AddressZero
+      );
+      await result.wait();
+      setRaffleAddress(await contract.raffles(raffleId));
       setIsOpen(true);
     } catch (e) {
       console.log(e);
@@ -212,7 +219,7 @@ export default function Example() {
                 </Dialog.Title>
 
                 <div className="mt-8 space-y-2">
-                  Here is your raffle URL: <a href={"/raffle/" + raffleAddress}>http://localhost:3000/raffle/{raffleAddress}</a>
+                  Here is your raffle URL: <a href={"/raffle/" + raffleAddress}>{url}/raffle/{raffleAddress}</a>
                 </div>
 
                 <button

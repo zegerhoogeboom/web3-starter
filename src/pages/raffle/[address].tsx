@@ -1,38 +1,49 @@
 /* This example requires Tailwind CSS v2.0+ */
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { useWeb3React } from "@web3-react/core";
 import { Header } from "@components/Header";
 import { useRouter } from "next/router";
 import { Dialog, Transition } from "@headlessui/react";
 import { useSignerOrProvider } from "@hooks/useWeb3React";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import Allowlister from "@abi/Allowlister.json";
 
 
 export default function Example() {
-  const { isActive, account } = useWeb3React()
   const router = useRouter();
-  const { raffleAddress } = router.query
+  const { isActive, account } = useWeb3React()
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
   const [isRegistered, setRegistered] = useState(false);
   const [raffleName, setRaffleName] = useState("Loading...");
-
+  const [winnersToDraw, setWinnersToDraw] = useState(0);
+  const onClose = () => setIsOpen(false)
   const signerOrProvider = useSignerOrProvider();
 
-  try {
-    const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
-    console.log(contract);
-    setRaffleName(contract.displayName)
-  } catch (e) {}
-  const onClose = () => setIsOpen(false)
+  useEffect(() => {
+    const address = router.query.address
+    if(!address || !signerOrProvider) return;
+    const contract = new ethers.Contract(address as string, Allowlister.abi, signerOrProvider);
+    (async () => {
+      await contract.deployed()
+      const displayName = await contract.displayName()
+      setRaffleName(displayName)
+    })()
+    // contract.winnersToDraw().then((x) => setWinnersToDraw(x.toNumber()));
+  }, [router.query.address])
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
+    const address = router.query.address
+    if (!address || !signerOrProvider) {
+      return
+    }
     setCreating(true);
     try {
-      const contract = new ethers.Contract(raffleAddress as string, Allowlister.abi, signerOrProvider);
-      await contract.register();
+      const contract = new ethers.Contract(address as string, Allowlister.abi, signerOrProvider);
+      console.log(contract);
+      await contract.connect(signerOrProvider).register();
+      // await contract.register();
       setIsOpen(true);
     } catch (e) {
       console.log(e);
@@ -40,7 +51,7 @@ export default function Example() {
       setCreating(false);
       setRegistered(true);
     }
-  }
+  }, [router.query.address, signerOrProvider])
 
 
   return (
@@ -52,7 +63,7 @@ export default function Example() {
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Raffle: {raffleName}
             </p>
-            <p>Number of spots: 1000</p>
+            <p>Number of spots: {winnersToDraw}</p>
           </div>
 
           <div className="mt-10">

@@ -14,6 +14,7 @@ export default function Example() {
   const { isActive, account } = useWeb3React()
   const router = useRouter();
   const { raffleAddress } = router.query
+  console.log(raffleAddress);
   const [isOpen, setIsOpen] = useState(false);
   const [isCreating, setCreating] = useState(false);
   const signerOrProvider = useSignerOrProvider();
